@@ -243,13 +243,13 @@
     fillBrands();updateStatus();
   }
   function enterWorkspace(account) {
-    state.session=account;byId('lockScreen').hidden=true;byId('appShell').hidden=false;
+    state.session=account;byId('lockScreen').hidden=true;byId('lockScreen').style.display='none';byId('appShell').hidden=false;byId('appShell').style.display='block';
     byId('currentUser').textContent=`${account.icon} ${account.name}`;byId('demoTools').style.display=account.role==='demo'?'flex':'none';
     try{sessionStorage.setItem('kuma_session',account.username);}catch{}
     resetWorkspace();if(account.role==='demo')loadDemoData(true);else switchTab('dashboard');
   }
   function showLockScreen() {
-    state.session=null;resetWorkspace();byId('appShell').hidden=true;byId('lockScreen').hidden=false;byId('loginForm').reset();byId('loginError').textContent='';
+    state.session=null;resetWorkspace();byId('appShell').hidden=true;byId('appShell').style.display='none';byId('lockScreen').hidden=false;byId('lockScreen').style.display='grid';byId('loginForm').reset();byId('loginError').textContent='';
   }
   function authenticate(username,password) {
     const account=accounts[String(username).trim().toLowerCase()];
