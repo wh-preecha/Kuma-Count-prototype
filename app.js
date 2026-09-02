@@ -190,9 +190,54 @@
   function exportHistory(){if(!state.history.length)return toast('ยังไม่มีประวัติ','bad');const wb=XLSX.utils.book_new(),daily=state.history.map(({items,...x})=>x),detail=state.history.flatMap(h=>(h.items||[]).map(x=>({date:h.date,...x})));XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(daily),'Daily Summary');XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(detail),'Item History');XLSX.writeFile(wb,`Auto_Reconcile_History_${today()}.xlsx`);}
   async function importHistory(file){try{if(file.name.toLowerCase().endsWith('.json'))state.history=JSON.parse(await file.text());else{const wb=XLSX.read(await file.arrayBuffer(),{type:'array'}),daily=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]),detail=wb.SheetNames[1]?XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[1]]):[];state.history=daily.map(d=>({...d,items:detail.filter(x=>x.date===d.date)}));}writeStore(storage.history,state.history);renderHistory();toast('นำเข้าประวัติเรียบร้อย');}catch(e){toast(`นำเข้าประวัติไม่สำเร็จ: ${e.message}`,'bad');}}
 
+  function loadDemoData() {
+    if (state.items.length && !confirm('โหลดข้อมูล Demo แทนข้อมูลปัจจุบันหรือไม่? Count และ History ที่เก็บในเบราว์เซอร์เครื่องนี้จะถูกแทนด้วยข้อมูลตัวอย่าง')) return;
+    const demo = [
+      ['NB-AX14-001','SNX10001','ASUS','Notebook ExpertBook B1 14 inch','Notebook',72,20,4,48,0,3,24500,'A',45],
+      ['NB-HP15-002','SNX10002','HP','Notebook ProBook 450 G10','Notebook',65,18,5,42,5,0,28900,'A',42],
+      ['NB-LN14-003','SNX10003','LENOVO','ThinkPad E14 Gen 5','Notebook',54,16,3,35,0,0,27900,'A',35],
+      ['SSD-SM1T-001','SNX20001','SAMSUNG','SSD 990 EVO NVMe 1TB','Storage',148,86,26,36,2,0,3190,'A',38],
+      ['SSD-WD2T-002','SNX20002','WD','SSD Black SN850X 2TB','Storage',96,52,18,26,0,2,5890,'A',25],
+      ['HDD-SG4T-003','SNX20003','SEAGATE','HDD IronWolf 4TB','Storage',124,74,16,34,6,0,3690,'B',34],
+      ['RAM-KS16-001','SNX30001','KINGSTON','DDR5 16GB 5600MHz','Memory',230,140,38,52,0,6,1890,'A',50],
+      ['RAM-CR32-002','SNX30002','CRUCIAL','DDR5 32GB 5600MHz','Memory',114,65,19,30,0,0,3290,'B',30],
+      ['MON-DL24-001','SNX40001','DELL','Monitor P2422H 24 inch','Monitor',50,22,10,18,0,0,6290,'A',18],
+      ['MON-LG27-002','SNX40002','LG','Monitor UltraGear 27 inch','Monitor',39,16,8,15,3,0,8990,'A',16],
+      ['MON-BN24-003','SNX40003','BENQ','Monitor GW2480 24 inch','Monitor',46,25,7,14,0,0,4790,'B',14],
+      ['RTR-CS01-001','SNX50001','CISCO','Business Router RV340','Network',31,7,2,22,0,1,12500,'A',21],
+      ['RTR-TPAX-002','SNX50002','TP-LINK','Archer AX73 Wi-Fi 6 Router','Network',83,48,13,22,4,0,3590,'B',22],
+      ['SWT-UB24-003','SNX50003','UBIQUITI','UniFi Switch 24 Port','Network',28,8,4,16,0,0,14900,'A',16],
+      ['PRN-BR01-001','SNX60001','BROTHER','Laser Printer HL-L2375DW','Printer',34,10,5,19,0,0,5990,'B',19],
+      ['PRN-EP02-002','SNX60002','EPSON','EcoTank L3250','Printer',41,18,7,16,0,2,4890,'B',14],
+      ['UPS-AP1K-001','SNX70001','APC','Smart UPS 1000VA','Power',27,6,3,18,2,0,13900,'A',20],
+      ['UPS-SY1K-002','SNX70002','SYNDOME','UPS ECO II 1000VA','Power',62,30,10,22,0,0,3290,'B',22],
+      ['KB-LG01-001','SNX80001','LOGITECH','MX Keys Wireless Keyboard','Accessory',105,62,18,25,0,4,3390,'B',24],
+      ['MS-LG02-002','SNX80002','LOGITECH','MX Master 3S Mouse','Accessory',118,73,19,26,0,0,2990,'B',26],
+      ['CAM-LG03-003','SNX80003','LOGITECH','Brio 500 Webcam','Accessory',76,42,14,20,3,0,3990,'B',20],
+      ['DOCK-DL01-004','SNX80004','DELL','USB-C Dock WD19S','Accessory',43,18,8,17,0,0,6490,'A',null],
+      ['GPU-AS46-001','SNX90001','ASUS','Dual GeForce RTX 4060 8GB','Component',24,8,3,13,0,0,12490,'A',null],
+      ['CPU-IN7-002','SNX90002','INTEL','Core i7-14700 Processor','Component',38,17,6,15,0,0,13900,'A',null]
+    ];
+    state.raw.stocktake = demo.map(x=>({code:x[0],synnexId:x[1],brand:x[2],desc:x[3],group:x[4],d365:x[5],asrs:x[6],robot:x[7],onfloor:x[8]}));
+    state.raw.inbound = demo.filter(x=>x[9]).map(x=>({code:x[0],synnexId:x[1],brand:x[2],desc:x[3],qty:x[9]}));
+    state.raw.outbound = demo.filter(x=>x[10]).map(x=>({code:x[0],synnexId:x[1],brand:x[2],desc:x[3],qty:x[10]}));
+    state.raw.master = demo.map(x=>({code:x[0],synnexId:x[1],brand:x[2],desc:x[3],group:x[4],cost:x[11],class:x[12]}));
+    state.counts = Object.fromEntries(demo.filter(x=>x[13]!==null).map(x=>[x[0],x[13]]));
+    writeStore(storage.counts,state.counts); state.fileName='Auto_Reconcile_Demo_Data.xlsx'; buildItems();
+    const currentItems=state.items.map(x=>({...x})), demoHistory=[];
+    for(let offset=6;offset>=0;offset--){
+      const d=new Date();d.setDate(d.getDate()-offset);const date=d.toISOString().slice(0,10);
+      const dayItems=currentItems.map((x,i)=>{const counted=i < 18 + (6-offset)%4;let variance=0;if(counted&&((i+offset)%7===0||[0,3,6].includes(i)&&offset%2===0))variance=(i%2?1:-1)*(1+(i%3));if(offset===0&&x.counted)variance=x.variance;const count=counted?x.onfloor+variance:null;return {code:x.code,desc:x.desc,brand:x.brand,onfloor:x.onfloor+(offset%3-1),inbound:Math.max(0,x.inbound-(offset%2)),outbound:Math.max(0,x.outbound-(offset%3===0?1:0)),count,variance:counted?variance:null,varianceValue:counted?variance*x.cost:null,source:variance===0?'match':variance>0&&x.inbound?'inbound':variance<0&&x.outbound?'outbound':'system'};});
+      const counted=dayItems.filter(x=>x.count!==null),diffs=counted.filter(x=>x.variance!==0),matches=counted.length-diffs.length;
+      demoHistory.push({date,savedAt:`${date}T09:00:00.000Z`,sku:dayItems.length,onhand:dayItems.reduce((s,x)=>s+x.onfloor,0),counted:counted.length,matches,diffs:diffs.length,accuracy:counted.length?matches/counted.length*100:0,varValue:diffs.reduce((s,x)=>s+Math.abs(x.varianceValue),0),inbound:dayItems.reduce((s,x)=>s+x.inbound,0),outbound:dayItems.reduce((s,x)=>s+x.outbound,0),items:dayItems});
+    }
+    state.history=demoHistory;writeStore(storage.history,state.history);createPlan();switchTab('dashboard');toast('โหลดข้อมูล Demo พร้อมประวัติ 7 วันแล้ว');
+  }
+
   function bind() {
     byId('tabs').addEventListener('click',e=>{const b=e.target.closest('button[data-tab]');if(b)switchTab(b.dataset.tab);});
     const dz=byId('dropzone'),fi=byId('fileInput');dz.addEventListener('click',()=>fi.click());fi.addEventListener('change',()=>fi.files[0]&&importWorkbook(fi.files[0]));['dragenter','dragover'].forEach(n=>dz.addEventListener(n,e=>{e.preventDefault();dz.classList.add('drag');}));['dragleave','drop'].forEach(n=>dz.addEventListener(n,e=>{e.preventDefault();dz.classList.remove('drag');}));dz.addEventListener('drop',e=>e.dataTransfer.files[0]&&importWorkbook(e.dataTransfer.files[0]));
+    byId('loadDemo').addEventListener('click',loadDemoData);
     byId('rawSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;state.rawSource=b.dataset.src;$$('#rawSeg button').forEach(x=>x.classList.toggle('active',x===b));renderRaw();});
     ['rawSearch'].forEach(id=>byId(id).addEventListener('input',renderRaw));
     ['masterSearch','masterBrand','masterClass'].forEach(id=>byId(id).addEventListener(id==='masterSearch'?'input':'change',renderMaster));

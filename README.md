@@ -8,6 +8,11 @@
 เปิด `index.html` ด้วย Chrome/Edge (ดับเบิลคลิกได้เลย ไม่ต้องลง server) แล้ว
 ลากไฟล์ `Prototype Cycle Count.xlsx` มาวางในหน้า **Input Raw Data**
 
+## ทดลองด้วยข้อมูล Demo
+- กดปุ่ม **✦ โหลดข้อมูล Demo** ในหน้า Input Raw Data เพื่อเติมข้อมูล 24 SKU พร้อม Count และ History จำลอง 7 วันทันที
+- หรือทดลอง Import ไฟล์ `Auto_Reconcile_Demo_Data.xlsx` ซึ่งมีชีต StockTake, Inbound, Outbound และ Master ครบ
+- ข้อมูลทั้งหมดเป็นข้อมูลสมมติ ไม่มีความเกี่ยวข้องกับสินค้าคงคลังจริง
+
 ## โครงสร้างไฟล์ Excel ที่ระบบอ่าน
 | ชีต | ใช้ทำอะไร |
 |---|---|
