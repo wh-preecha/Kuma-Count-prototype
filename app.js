@@ -26,7 +26,11 @@
     raw:{stocktake:[], inbound:[], outbound:[], master:[]}, items:[],
     masterEdits:readStore(storage.master, {}), counts:readStore(storage.counts, {}),
     history:readStore(storage.history, []), charts:{}, rawSource:'stocktake', countStrategy:'smart', fileName:'',
-    plan:[]
+    plan:[], session:null
+  };
+  const accounts = {
+    demo:{username:'demo',password:'demo123',role:'demo',name:'Demo User',icon:'🐻'},
+    user:{username:'user',password:'user123',role:'real',name:'Real User',icon:'📦'}
   };
 
   if (window.Chart) {
@@ -234,7 +238,32 @@
     state.history=demoHistory;if(!silent){writeStore(storage.history,state.history);localStorage.setItem(storage.demo,'1');}createPlan();switchTab('dashboard');if(!silent)toast('โหลดข้อมูล Demo พร้อมประวัติ 7 วันแล้ว');
   }
 
+  function resetWorkspace() {
+    state.raw={stocktake:[],inbound:[],outbound:[],master:[]};state.items=[];state.counts={};state.history=[];state.plan=[];state.fileName='';
+    fillBrands();updateStatus();
+  }
+  function enterWorkspace(account) {
+    state.session=account;byId('lockScreen').hidden=true;byId('appShell').hidden=false;
+    byId('currentUser').textContent=`${account.icon} ${account.name}`;byId('demoTools').style.display=account.role==='demo'?'flex':'none';
+    try{sessionStorage.setItem('kuma_session',account.username);}catch{}
+    resetWorkspace();if(account.role==='demo')loadDemoData(true);else switchTab('dashboard');
+  }
+  function showLockScreen() {
+    state.session=null;resetWorkspace();byId('appShell').hidden=true;byId('lockScreen').hidden=false;byId('loginForm').reset();byId('loginError').textContent='';
+  }
+  function authenticate(username,password) {
+    const account=accounts[String(username).trim().toLowerCase()];
+    if(!account||account.password!==password)return false;enterWorkspace(account);return true;
+  }
+  function initAuth() {
+    let saved='';try{saved=sessionStorage.getItem('kuma_session')||'';}catch{}
+    if(accounts[saved])enterWorkspace(accounts[saved]);else showLockScreen();
+  }
+
   function bind() {
+    byId('loginForm').addEventListener('submit',e=>{e.preventDefault();if(!authenticate(byId('loginUser').value,byId('loginPass').value))byId('loginError').textContent='ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';});
+    $$('.account-choice').forEach(b=>b.addEventListener('click',()=>{const a=accounts[b.dataset.login];byId('loginUser').value=a.username;byId('loginPass').value=a.password;authenticate(a.username,a.password);}));
+    byId('logoutBtn').addEventListener('click',()=>{try{sessionStorage.removeItem('kuma_session');}catch{}showLockScreen();});
     byId('tabs').addEventListener('click',e=>{const b=e.target.closest('button[data-tab]');if(b)switchTab(b.dataset.tab);});
     const dz=byId('dropzone'),fi=byId('fileInput');dz.addEventListener('click',()=>fi.click());fi.addEventListener('change',()=>fi.files[0]&&importWorkbook(fi.files[0]));['dragenter','dragover'].forEach(n=>dz.addEventListener(n,e=>{e.preventDefault();dz.classList.add('drag');}));['dragleave','drop'].forEach(n=>dz.addEventListener(n,e=>{e.preventDefault();dz.classList.remove('drag');}));dz.addEventListener('drop',e=>e.dataTransfer.files[0]&&importWorkbook(e.dataTransfer.files[0]));
     byId('loadDemo').addEventListener('click',()=>loadDemoData(false));
@@ -259,5 +288,5 @@
   }
 
   bind();
-  loadDemoData(true);
+  initAuth();
 })();

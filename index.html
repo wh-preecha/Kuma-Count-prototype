@@ -147,12 +147,60 @@
   .tblwrap{border-color:#594131}th{background:#33251e;color:#c4ad9a}tbody tr:hover{background:#3a2b22}
   input,select,textarea{background:#201713;border-color:#5a4233}.dropzone{background:rgba(38,26,20,.5)}
   .demo-chip{display:inline-flex;align-items:center;margin-left:8px;padding:3px 8px;border-radius:20px;background:rgba(217,154,88,.15);border:1px solid rgba(217,154,88,.3);color:#e7bc8d;font-size:10px;font-weight:700;vertical-align:middle}
+  /* Kuma light theme */
+  :root{--bg:#f7f3ee;--panel:#ffffff;--panel2:#f3ebe3;--line:#e3d5c9;--txt:#3d2c23;--muted:#8c786b;--accent:#b87845;--accent2:#9d6034;--good:#65945c;--warn:#d18b38;--bad:#c95f57;--purple:#9c7866}
+  body{background:radial-gradient(circle at 80% -10%,#f4dfc8 0,transparent 31%),linear-gradient(145deg,#fbfaf8,#f5efe9);color:var(--txt)}
+  header.app{background:rgba(255,255,255,.92);border-color:#e9ddd3;box-shadow:0 7px 24px rgba(91,63,43,.06)}
+  .badge,.date-chip{background:#fff7ef;border-color:#ead3bf;color:#765744}.side-brand{color:#3d2c23}
+  nav.tabs{background:linear-gradient(180deg,#fffaf5,#f5ece4 76%);border-color:#e4d4c7;box-shadow:7px 0 26px rgba(91,63,43,.06)}
+  .nav-label{color:#aa8d78}nav.tabs button{color:#78675c}nav.tabs button .n{background:#efe1d5;color:#76543d}
+  nav.tabs button.active{color:#633d23;background:linear-gradient(90deg,#f2d8bd,#fff8f0);border-color:#dfbd9e;box-shadow:inset 3px 0 #b87845}
+  nav.tabs button.active .n{background:#b87845;color:#fff}.side-foot{border-color:#e0d1c5;color:#9b8373}
+  .card{background:#fff;border-color:#eadfd6;box-shadow:0 10px 28px rgba(83,55,36,.07)}
+  .kpi{background:linear-gradient(145deg,#ffffff,#faf5f0);border-color:#e7d8cc;box-shadow:0 7px 20px rgba(83,55,36,.05)}
+  .bar-track{background:#eee3da}.bar-fill{background:linear-gradient(90deg,#dca06a,#a86438)}
+  .metric-block,.suggestion{background:#fffaf6;border-color:#eadbcf}.suggestion .ico{background:#f4e1ce}
+  .today-ring{background:conic-gradient(var(--accent) var(--progress,0%),#ece1d7 0)}.today-ring:before{background:#fff}
+  .tblwrap{border-color:#e5d8ce}th{background:#f7efe8;color:#765f50}tbody tr:hover{background:#fff8f1}
+  input,select,textarea{background:#fff;border-color:#ddcbbb;color:#3d2c23}.dropzone{background:#fffaf6}.hint{background:#faf2eb}.count-card{background:#fffaf6}.locbox{background:#fff}
+  .demo-chip{background:#f4e1ce;border-color:#dfbd9e;color:#8c552f}
+  .user-session{display:flex;align-items:center;gap:6px;background:#f8eee5;border:1px solid #e4cdb9;border-radius:20px;padding:5px 10px;color:#76513a;font-size:11px;font-weight:700}
+  .lock-screen{min-height:100vh;display:grid;place-items:center;padding:24px;background:radial-gradient(circle at 50% 0,#f0d8bf 0,transparent 37%),linear-gradient(145deg,#fffdfa,#f2e9e0)}
+  .lock-card{width:min(940px,100%);display:grid;grid-template-columns:1.05fr .95fr;background:#fff;border:1px solid #eadccf;border-radius:28px;overflow:hidden;box-shadow:0 28px 80px rgba(91,58,35,.14)}
+  .lock-brand{padding:48px;background:linear-gradient(145deg,#a96739,#744428);color:#fff9f1;display:flex;flex-direction:column;justify-content:space-between;min-height:520px}
+  .lock-bear{width:76px;height:76px;border-radius:24px;background:#f0be82;display:grid;place-items:center;font-size:42px;box-shadow:0 15px 35px rgba(48,24,10,.2)}
+  .lock-brand h1{font-size:32px;margin:24px 0 10px}.lock-brand p{color:#efdac7;line-height:1.7;max-width:360px}.lock-brand small{color:#d9bda7}
+  .lock-form-wrap{padding:48px;display:flex;flex-direction:column;justify-content:center}.lock-form-wrap h2{font-size:24px;margin:0 0 6px}.lock-form-wrap>p{margin:0 0 24px;color:var(--muted)}
+  .login-form{display:flex;flex-direction:column;gap:14px}.login-form input{width:100%;padding:12px 14px;border-radius:11px}.login-form .btn{padding:12px}
+  .login-error{min-height:18px;color:var(--bad);font-size:11px}.account-choices{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px}
+  .account-choice{border:1px solid #e7d7ca;background:#fffaf6;border-radius:12px;padding:12px;text-align:left;cursor:pointer;color:var(--txt)}.account-choice:hover{border-color:#ba7a48;background:#fff5ea}.account-choice b{display:block;font-size:12px}.account-choice small{color:var(--muted);font-size:10px}
+  .security-note{margin-top:16px;font-size:10px;color:#a18b7b;line-height:1.5}
+  @media(max-width:760px){.lock-card{grid-template-columns:1fr}.lock-brand{min-height:auto;padding:28px}.lock-brand h1{font-size:24px}.lock-brand small{display:none}.lock-form-wrap{padding:28px}.account-choices{grid-template-columns:1fr}.user-session{display:none}}
   @media(max-width:1100px){.overview-kpis{grid-template-columns:repeat(3,1fr)}.dash-grid>.span-3,.dash-grid>.span-4,.dash-grid>.span-5,.dash-grid>.span-7,.dash-grid>.span-8,.dash-grid>.span-9{grid-column:span 6}}
   @media(max-width:760px){header.app{left:0;height:62px;padding:10px 12px}.brand-mobile{display:block!important}header.app h1{font-size:14px}header.app .badge,header.app #saveSnapshot{display:none}nav.tabs{top:auto;bottom:0;width:100%;height:68px;flex-direction:row;padding:6px;overflow-x:auto;border-top:1px solid #1c3045}nav.tabs .side-brand,nav.tabs .nav-label,nav.tabs .side-foot{display:none}nav.tabs button{min-width:70px;justify-content:center;flex-direction:column;gap:2px;padding:5px;font-size:9px}nav.tabs button .n{width:23px;height:23px}main{margin:0;padding:76px 10px 82px}.dashboard-head{align-items:flex-start}.date-chip{display:none}.overview-kpis{grid-template-columns:repeat(2,1fr)}.dash-grid>*{grid-column:span 12!important}.overview-kpis .kpi{min-height:94px}.overview-kpis .val{font-size:22px}}
 </style>
 </head>
 <body>
-<div class="app-shell">
+<section class="lock-screen" id="lockScreen" aria-label="เข้าสู่ระบบ Kuma Inventory">
+  <div class="lock-card">
+    <div class="lock-brand"><div><div class="lock-bear">🐻</div><h1>Kuma Inventory</h1><p>พื้นที่ควบคุม Auto Reconcile และ Daily Cycle Count ที่ช่วยให้เห็นความเสี่ยงของสต็อกได้ชัดเจนในทุกวัน</p></div><small>Brown Bear Inventory Control · Local Browser Prototype</small></div>
+    <div class="lock-form-wrap">
+      <h2>ยินดีต้อนรับกลับมา</h2><p>เข้าสู่ระบบเพื่อเปิดพื้นที่ทำงานของคุณ</p>
+      <form class="login-form" id="loginForm">
+        <label class="fld">ชื่อผู้ใช้<input id="loginUser" autocomplete="username" placeholder="กรอกชื่อผู้ใช้" required></label>
+        <label class="fld">รหัสผ่าน<input id="loginPass" type="password" autocomplete="current-password" placeholder="กรอกรหัสผ่าน" required></label>
+        <div class="login-error" id="loginError" role="alert"></div>
+        <button class="btn" type="submit">เข้าสู่ระบบ</button>
+      </form>
+      <div class="account-choices">
+        <button type="button" class="account-choice" data-login="demo"><b>🐻 Demo User</b><small>demo / demo123 · เห็นข้อมูลตัวอย่าง</small></button>
+        <button type="button" class="account-choice" data-login="user"><b>📦 Real User</b><small>user / user123 · เริ่มด้วยข้อมูลเปล่า</small></button>
+      </div>
+      <div class="security-note">Lock Screen นี้เป็นระบบเข้าสู่โปรแกรมแบบ Local Prototype สำหรับแยกโหมดการใช้งาน ไม่ใช่ระบบยืนยันตัวตนสำหรับใช้งานบนเซิร์ฟเวอร์จริง</div>
+    </div>
+  </div>
+</section>
+<div class="app-shell" id="appShell" hidden>
 <header class="app">
   <div class="brand-mobile" style="font-size:22px">🐻</div>
   <div>
@@ -161,6 +209,8 @@
   </div>
   <div class="spacer"></div>
   <span class="badge" id="dataStatus">ยังไม่มีข้อมูล</span>
+  <span class="user-session" id="currentUser">🐻 Demo User</span>
+  <button class="btn ghost sm" id="logoutBtn">ออกจากระบบ</button>
   <button class="btn sm" id="saveSnapshot" title="บันทึกข้อมูลของวันนี้เข้าประวัติ">💾 บันทึกวันนี้</button>
   <button class="btn ghost sm" id="mobileToggle" title="สลับโหมดมือถือ">📱 Mobile</button>
 </header>
@@ -209,7 +259,7 @@
         <input type="file" id="fileInput" accept=".xlsx,.xls" hidden>
       </div>
       <div class="filebar" id="filebar"></div>
-      <div class="row" style="margin-top:12px">
+      <div class="row" id="demoTools" style="margin-top:12px">
         <button class="btn ghost sm" id="loadDemo">✦ โหลดข้อมูล Demo</button>
         <span class="mini muted">ทดลอง Dashboard และทุกเมนูได้ทันทีโดยไม่ต้องเตรียมไฟล์</span>
       </div>

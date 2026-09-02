@@ -14,8 +14,16 @@
 - หรือทดลอง Import ไฟล์ `Auto_Reconcile_Demo_Data.xlsx` ซึ่งมีชีต StockTake, Inbound, Outbound และ Master ครบ
 - ข้อมูลทั้งหมดเป็นข้อมูลสมมติ ไม่มีความเกี่ยวข้องกับสินค้าคงคลังจริง
 
-## Kuma Theme
-หน้าจอใช้ธีมหมีสีน้ำตาล โทนโกโก้–คาราเมล–ครีม พร้อมสีสถานะที่ยังแยก Match, Warning และ Variance ได้ชัดเจน
+## Lock Screen และบัญชีตัวอย่าง
+| ประเภทบัญชี | Username | Password | ข้อมูลหลังเข้าสู่ระบบ |
+|---|---|---|---|
+| Demo User | `demo` | `demo123` | Dashboard แสดงข้อมูลตัวอย่าง 24 SKU และ History 7 วัน |
+| Real User | `user` | `user123` | เริ่มจากข้อมูลเปล่า พร้อมนำเข้าไฟล์จริง |
+
+Lock Screen เป็นระบบแยกโหมดการใช้งานฝั่ง Browser สำหรับ Prototype เท่านั้น รหัสผ่านอยู่ในไฟล์ JavaScript จึงไม่ควรใช้แทนระบบ Authentication บน Server เมื่อนำไป Production
+
+## Kuma Light Theme
+หน้าจอใช้พื้นขาว–ครีมและสีน้ำตาลคาราเมล เพื่อให้กราฟ ตาราง และสีสถานะ Match, Warning และ Variance เด่นและอ่านง่ายขึ้น
 
 ## โครงสร้างไฟล์ Excel ที่ระบบอ่าน
 | ชีต | ใช้ทำอะไร |
