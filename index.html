@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Auto Reconcile &amp; Daily Stock Cycle Count</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#0f172a; --panel:#1e293b; --panel2:#273449; --line:#334155;
+    --txt:#e2e8f0; --muted:#94a3b8; --accent:#38bdf8; --accent2:#0ea5e9;
+    --good:#22c55e; --warn:#f59e0b; --bad:#ef4444; --purple:#a78bfa;
+    --radius:12px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Segoe UI",Tahoma,system-ui,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}
+  header.app{display:flex;align-items:center;gap:14px;padding:12px 18px;background:linear-gradient(90deg,#0b3a5e,#0e293f);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:50}
+  header.app h1{font-size:16px;margin:0;font-weight:700;letter-spacing:.3px}
+  header.app .sub{color:var(--muted);font-size:12px}
+  .spacer{flex:1}
+  .badge{background:var(--panel2);border:1px solid var(--line);border-radius:20px;padding:4px 12px;font-size:12px;color:var(--muted)}
+  nav.tabs{display:flex;gap:4px;padding:8px 14px 0;background:var(--panel);border-bottom:1px solid var(--line);overflow-x:auto;position:sticky;top:53px;z-index:40}
+  nav.tabs button{background:transparent;border:none;color:var(--muted);padding:10px 16px;border-radius:8px 8px 0 0;cursor:pointer;font-size:13px;white-space:nowrap;display:flex;gap:8px;align-items:center;font-weight:600}
+  nav.tabs button .n{background:var(--panel2);border-radius:20px;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-size:11px}
+  nav.tabs button.active{color:var(--txt);background:var(--bg);border:1px solid var(--line);border-bottom:1px solid var(--bg);margin-bottom:-1px}
+  nav.tabs button.active .n{background:var(--accent);color:#052a3d}
+  main{padding:18px;max-width:1400px;margin:0 auto}
+  .page{display:none}
+  .page.active{display:block;animation:fade .2s}
+  @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:18px;margin-bottom:16px}
+  .card h2{margin:0 0 4px;font-size:15px}
+  .card .desc{color:var(--muted);font-size:12px;margin-bottom:14px}
+  .grid{display:grid;gap:14px}
+  .kpis{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+  .kpi{background:var(--panel2);border:1px solid var(--line);border-radius:var(--radius);padding:14px}
+  .kpi .label{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.5px}
+  .kpi .val{font-size:24px;font-weight:700;margin-top:4px}
+  .kpi .val small{font-size:13px;color:var(--muted);font-weight:400}
+  .kpi.good .val{color:var(--good)} .kpi.warn .val{color:var(--warn)} .kpi.bad .val{color:var(--bad)} .kpi.accent .val{color:var(--accent)}
+  button.btn{background:var(--accent2);color:#04212f;border:none;border-radius:8px;padding:9px 16px;font-weight:700;cursor:pointer;font-size:13px}
+  button.btn:hover{background:var(--accent)}
+  button.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--txt)}
+  button.btn.ghost:hover{border-color:var(--accent)}
+  button.btn.sm{padding:5px 10px;font-size:12px}
+  button.btn.danger{background:var(--bad);color:#fff}
+  input,select,textarea{background:var(--bg);border:1px solid var(--line);color:var(--txt);border-radius:8px;padding:8px 10px;font-size:13px;font-family:inherit}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent)}
+  label.fld{display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--muted)}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  th,td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+  th{color:var(--muted);font-weight:600;position:sticky;top:0;background:var(--panel);cursor:pointer;user-select:none}
+  tbody tr:hover{background:var(--panel2)}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+  .tblwrap{overflow:auto;max-height:60vh;border:1px solid var(--line);border-radius:var(--radius)}
+  .pill{padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700;display:inline-block}
+  .pill.good{background:rgba(34,197,94,.15);color:var(--good)}
+  .pill.warn{background:rgba(245,158,11,.15);color:var(--warn)}
+  .pill.bad{background:rgba(239,68,68,.15);color:var(--bad)}
+  .pill.info{background:rgba(56,189,248,.15);color:var(--accent)}
+  .pill.mut{background:var(--panel2);color:var(--muted)}
+  .dropzone{border:2px dashed var(--line);border-radius:var(--radius);padding:30px;text-align:center;color:var(--muted);cursor:pointer;transition:.15s}
+  .dropzone:hover,.dropzone.drag{border-color:var(--accent);background:var(--panel2);color:var(--txt)}
+  .filebar{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+  .fileitem{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:8px 12px;font-size:12px;display:flex;gap:8px;align-items:center}
+  .muted{color:var(--muted)}
+  .hint{font-size:12px;color:var(--muted);background:var(--panel2);border-left:3px solid var(--accent);padding:10px 12px;border-radius:6px;margin:10px 0}
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
+  .toolbar input[type=search]{min-width:220px}
+  .seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .seg button{background:transparent;border:none;color:var(--muted);padding:7px 12px;cursor:pointer;font-size:12px}
+  .seg button.active{background:var(--accent);color:#04212f;font-weight:700}
+  .empty{text-align:center;color:var(--muted);padding:40px}
+  .count-card{background:var(--panel2);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin-bottom:10px}
+  .count-card .top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+  .count-card .sc{font-weight:700;font-size:14px}
+  .count-card .meta{color:var(--muted);font-size:12px;margin-top:2px}
+  .count-card .locs{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+  .locbox{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:6px 10px;text-align:center;min-width:66px}
+  .locbox .l{font-size:10px;color:var(--muted)} .locbox .v{font-size:16px;font-weight:700}
+  .count-input{display:flex;gap:8px;align-items:center}
+  .count-input input{font-size:20px;width:110px;text-align:center;font-weight:700}
+  .progressbar{height:8px;background:var(--panel2);border-radius:6px;overflow:hidden}
+  .progressbar>div{height:100%;background:var(--good)}
+  .mini{font-size:11px}
+  a.link{color:var(--accent);cursor:pointer}
+  @media(max-width:640px){
+    main{padding:10px} .card{padding:14px}
+    header.app h1{font-size:14px} header.app .sub{display:none}
+    nav.tabs button{padding:9px 11px;font-size:12px}
+  }
+  .mobileonly{display:none}
+  body.mobile .desktoponly{display:none}
+  body.mobile .mobileonly{display:block}
+  /* Enterprise dashboard shell */
+  :root{--bg:#07101d;--panel:#0d1928;--panel2:#122237;--line:#20344b;--txt:#f4f8fc;--muted:#7f93aa;--accent:#28c8f5;--accent2:#14aede;--good:#38d996;--warn:#ffb84d;--bad:#ff6072;--purple:#9a86ff;--radius:16px}
+  body{background:radial-gradient(circle at 75% -15%,#123550 0,transparent 31%),var(--bg);min-height:100vh}
+  .app-shell{min-height:100vh}
+  header.app{left:224px;padding:15px 26px;background:rgba(7,16,29,.88);backdrop-filter:blur(16px);border-color:rgba(70,105,138,.22);height:68px}
+  header.app .brand-mobile{display:none}
+  header.app h1{font-size:18px;letter-spacing:0}
+  header.app .sub{font-size:11px;margin-top:3px}
+  .badge{background:#10243a;border-color:#25415e;color:#9fb2c6}
+  nav.tabs{position:fixed;inset:0 auto 0 0;width:224px;height:100vh;z-index:80;display:flex;flex-direction:column;gap:4px;padding:22px 12px;background:linear-gradient(180deg,#0b1726,#08111e 68%);border-right:1px solid #1c3045;border-bottom:0;overflow-y:auto}
+  .side-brand{display:flex;align-items:center;gap:11px;padding:4px 8px 24px;color:#fff}
+  .brand-mark{width:38px;height:38px;border-radius:12px;background:linear-gradient(145deg,#21d3f6,#2679ee);display:grid;place-items:center;box-shadow:0 8px 24px rgba(37,176,239,.22);font-size:20px}
+  .side-brand strong{font-size:13px;display:block}.side-brand span{font-size:10px;color:var(--muted)}
+  .nav-label{font-size:10px;text-transform:uppercase;letter-spacing:1.1px;color:#536b83;padding:10px 12px 4px}
+  nav.tabs button{width:100%;padding:10px 12px;border-radius:10px;color:#8499ae;font-size:12px;gap:10px;margin:0;border:1px solid transparent;text-align:left}
+  nav.tabs button .n{background:#11243a;width:25px;height:25px;border-radius:8px}
+  nav.tabs button.active{color:#fff;background:linear-gradient(90deg,rgba(33,198,244,.18),rgba(33,198,244,.03));border:1px solid rgba(40,200,245,.25);margin:0;box-shadow:inset 3px 0 #28c8f5}
+  nav.tabs button.active .n{background:#28c8f5;color:#032338}
+  .side-foot{margin-top:auto;padding:14px 10px 4px;border-top:1px solid #172a3e;color:#60778e;font-size:10px;line-height:1.6}
+  main{max-width:none;margin:0 0 0 224px;padding:90px 26px 32px}
+  .card{background:linear-gradient(145deg,rgba(16,31,49,.98),rgba(10,22,36,.98));border-color:rgba(66,100,132,.28);box-shadow:0 12px 32px rgba(0,0,0,.12)}
+  .kpi{background:linear-gradient(145deg,#11243a,#0b1a2b);border-color:#203a53;position:relative;overflow:hidden}
+  .kpi:after{content:"";position:absolute;width:70px;height:70px;border-radius:50%;right:-28px;top:-30px;background:currentColor;opacity:.06}
+  .dashboard-head{display:flex;align-items:flex-end;gap:18px;margin-bottom:18px}.dashboard-head h2{font-size:24px;margin:0}.dashboard-head p{color:var(--muted);margin:5px 0 0}.date-chip{margin-left:auto;background:#0e2134;border:1px solid #203b54;padding:8px 12px;border-radius:10px;color:#a6b9ca;font-size:12px}
+  .overview-kpis{grid-template-columns:repeat(5,minmax(145px,1fr));margin-bottom:14px}.overview-kpis .kpi{min-height:112px;padding:16px}.overview-kpis .val{font-size:27px}.kpi .delta{font-size:10px;margin-top:8px;color:var(--muted)}
+  .dash-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px}.span-3{grid-column:span 3}.span-4{grid-column:span 4}.span-5{grid-column:span 5}.span-7{grid-column:span 7}.span-8{grid-column:span 8}.span-9{grid-column:span 9}.span-12{grid-column:span 12}
+  .dash-card{margin:0;padding:16px;min-height:210px}.dash-card h2{font-size:13px}.dash-card .desc{margin-bottom:10px}
+  .location-list,.cause-list,.suggestion-list{display:flex;flex-direction:column;gap:9px}.location-row,.cause-row{display:grid;grid-template-columns:74px 1fr 55px;gap:9px;align-items:center;font-size:11px}.bar-track{height:7px;border-radius:10px;background:#172a3e;overflow:hidden}.bar-fill{height:100%;border-radius:10px;background:linear-gradient(90deg,#24c8ed,#5476f3)}
+  .metric-pair{display:grid;grid-template-columns:1fr 1fr;gap:10px}.metric-block{background:#0b1a2a;border:1px solid #1d344b;border-radius:12px;padding:12px}.metric-block strong{display:block;font-size:20px;margin-top:4px}.metric-block span{color:var(--muted);font-size:10px}.metric-block.positive strong{color:var(--good)}.metric-block.negative strong{color:var(--bad)}
+  .suggestion{display:flex;gap:10px;padding:10px;border-radius:11px;background:#0b1b2b;border:1px solid #1b344b}.suggestion .ico{width:28px;height:28px;border-radius:8px;background:rgba(40,200,245,.13);display:grid;place-items:center;flex:0 0 auto}.suggestion b{display:block;font-size:11px}.suggestion small{color:var(--muted);font-size:10px}
+  .today-ring{width:112px;height:112px;margin:8px auto 14px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(var(--good) var(--progress,0%),#172b40 0);position:relative}.today-ring:before{content:"";position:absolute;inset:10px;border-radius:50%;background:#0d1d2e}.today-ring strong{z-index:1;font-size:22px}.today-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;text-align:center}.today-stats div{font-size:10px;color:var(--muted)}.today-stats b{display:block;color:var(--txt);font-size:14px}
+  .empty{padding:28px}.tblwrap{border-color:#20374e}th{background:#101f31;color:#8298ae}tbody tr:hover{background:#12263b}
+  input,select,textarea{background:#081524;border-color:#203951}.dropzone{background:rgba(8,21,36,.4)}
+  .card canvas{max-height:280px}
+  @media(max-width:1100px){.overview-kpis{grid-template-columns:repeat(3,1fr)}.dash-grid>.span-3,.dash-grid>.span-4,.dash-grid>.span-5,.dash-grid>.span-7,.dash-grid>.span-8,.dash-grid>.span-9{grid-column:span 6}}
+  @media(max-width:760px){header.app{left:0;height:62px;padding:10px 12px}.brand-mobile{display:block!important}header.app h1{font-size:14px}header.app .badge,header.app #saveSnapshot{display:none}nav.tabs{top:auto;bottom:0;width:100%;height:68px;flex-direction:row;padding:6px;overflow-x:auto;border-top:1px solid #1c3045}nav.tabs .side-brand,nav.tabs .nav-label,nav.tabs .side-foot{display:none}nav.tabs button{min-width:70px;justify-content:center;flex-direction:column;gap:2px;padding:5px;font-size:9px}nav.tabs button .n{width:23px;height:23px}main{margin:0;padding:76px 10px 82px}.dashboard-head{align-items:flex-start}.date-chip{display:none}.overview-kpis{grid-template-columns:repeat(2,1fr)}.dash-grid>*{grid-column:span 12!important}.overview-kpis .kpi{min-height:94px}.overview-kpis .val{font-size:22px}}
+</style>
+</head>
+<body>
+<div class="app-shell">
+<header class="app">
+  <div class="brand-mobile" style="font-size:22px">◈</div>
+  <div>
+    <h1>Auto Reconcile &amp; Daily Stock Cycle Count</h1>
+    <div class="sub">SYNNEX WMS · ใส่ Raw Data → Reconcile อัตโนมัติ</div>
+  </div>
+  <div class="spacer"></div>
+  <span class="badge" id="dataStatus">ยังไม่มีข้อมูล</span>
+  <button class="btn sm" id="saveSnapshot" title="บันทึกข้อมูลของวันนี้เข้าประวัติ">💾 บันทึกวันนี้</button>
+  <button class="btn ghost sm" id="mobileToggle" title="สลับโหมดมือถือ">📱 Mobile</button>
+</header>
+
+<nav class="tabs" id="tabs" aria-label="เมนูหลัก">
+  <div class="side-brand"><div class="brand-mark">◈</div><div><strong>INVENTORY IQ</strong><span>Auto Reconcile Center</span></div></div>
+  <div class="nav-label">Overview</div>
+  <button data-tab="dashboard" class="active"><span class="n">⌂</span> Dashboard</button>
+  <div class="nav-label">Operations</div>
+  <button data-tab="raw"><span class="n">⇧</span> Input Raw Data</button>
+  <button data-tab="master"><span class="n">▦</span> Item Master</button>
+  <button data-tab="summary"><span class="n">≋</span> Reconcile</button>
+  <button data-tab="count"><span class="n">✓</span> Daily Cycle Count</button>
+  <button data-tab="compare"><span class="n">⇄</span> Compare & Tracking</button>
+  <div class="nav-label">Insights</div>
+  <button data-tab="history"><span class="n">↗</span> History</button>
+  <div class="side-foot">LOCAL WORKSPACE<br>ข้อมูลเก็บในเบราว์เซอร์ของคุณ</div>
+</nav>
+
+<main>
+  <!-- ============ ENTERPRISE OVERVIEW ============ -->
+  <section class="page active" id="page-dashboard">
+    <div class="dashboard-head"><div><h2>Inventory Control Tower</h2><p>ภาพรวมการกระทบยอดและ Cycle Count แบบเรียลไทม์</p></div><div class="date-chip" id="dashDate">—</div></div>
+    <div class="grid overview-kpis" id="dashKpis"></div>
+    <div class="dash-grid">
+      <div class="card dash-card span-4"><h2>Inventory by Location</h2><div class="desc">สัดส่วนสต็อกตามพื้นที่จัดเก็บ</div><div class="location-list" id="dashLocations"></div></div>
+      <div class="card dash-card span-4"><h2>Variance Summary</h2><div class="desc">จำนวน SKU ตามสถานะผลต่าง</div><canvas id="chartDashVariance" height="180"></canvas></div>
+      <div class="card dash-card span-4"><h2>Variance Value Breakdown</h2><div class="desc">มูลค่าเกินและขาดจากรายการที่นับแล้ว</div><div class="metric-pair" id="dashValueBreakdown"></div><canvas id="chartDashValue" height="120"></canvas></div>
+      <div class="card dash-card span-8"><h2>Accuracy & Variance Trend</h2><div class="desc">แนวโน้มย้อนหลังจาก Snapshot</div><canvas id="chartDashTrend" height="185"></canvas></div>
+      <div class="card dash-card span-4"><h2>Root Cause Analysis</h2><div class="desc">สาเหตุที่ระบบวินิจฉัยจาก Movement</div><canvas id="chartDashCause" height="185"></canvas></div>
+      <div class="card dash-card span-8"><h2>Top Variance Items</h2><div class="desc">รายการที่มีมูลค่าผลต่างสูงสุดและควรตรวจสอบก่อน</div><div class="tblwrap" style="max-height:270px"><table id="dashTopVariance"></table></div></div>
+      <div class="card dash-card span-4"><h2>Today's Cycle Count</h2><div class="desc">ความคืบหน้าแผนการนับวันนี้</div><div id="dashToday"></div></div>
+      <div class="card dash-card span-12"><h2>Smart Suggestions</h2><div class="desc">คำแนะนำอัตโนมัติจากข้อมูลล่าสุด</div><div class="suggestion-list" id="dashSuggestions"></div></div>
+    </div>
+  </section>
+
+  <!-- ============ PAGE 1: RAW DATA ============ -->
+  <section class="page" id="page-raw">
+    <div class="card">
+      <h2>1 · Input Raw Data</h2>
+      <div class="desc">อัปโหลดไฟล์ Excel (.xlsx) ที่มีชีต Inbound, Outbound, StockTake (redbox) — ระบบจะตรวจจับชีตอัตโนมัติและสร้าง Master + Reconcile ให้ทันที</div>
+      <div class="dropzone" id="dropzone">
+        <div style="font-size:34px">⬆️</div>
+        <div><b>ลากไฟล์ .xlsx มาวาง</b> หรือคลิกเพื่อเลือกไฟล์</div>
+        <div class="mini muted" style="margin-top:6px">รองรับไฟล์ Prototype Cycle Count.xlsx (ชีต Inbound / Outbound / StockTake redbox)</div>
+        <input type="file" id="fileInput" accept=".xlsx,.xls" hidden>
+      </div>
+      <div class="filebar" id="filebar"></div>
+      <div class="hint">
+        <b>โครงสร้างที่ระบบใช้:</b> StockTake redbox = Inventory Onhand (G=D365, H=ASRS, I=Robot Miniload, J=Onfloor).
+        Onfloor คำนวณ = D365 − ASRS − Robot. · Inbound = ยอดรับเข้า (Receive Qty) · Outbound = ยอดขายออก/คืน (QTY, ติดลบ=ออก)
+      </div>
+    </div>
+
+    <div class="grid kpis" id="rawKpis"></div>
+
+    <div class="card" id="rawPreviewCard" style="display:none">
+      <div class="toolbar">
+        <div class="seg" id="rawSeg">
+          <button data-src="stocktake" class="active">StockTake (Onhand)</button>
+          <button data-src="inbound">Inbound</button>
+          <button data-src="outbound">Outbound</button>
+        </div>
+        <input type="search" id="rawSearch" placeholder="ค้นหา stock code / brand...">
+        <span class="muted mini" id="rawCount"></span>
+      </div>
+      <div class="tblwrap"><table id="rawTable"></table></div>
+    </div>
+  </section>
+
+  <!-- ============ PAGE 2: ITEM MASTER ============ -->
+  <section class="page" id="page-master">
+    <div class="card">
+      <h2>2 · Item Master Setup</h2>
+      <div class="desc">ทะเบียนสินค้า (สร้างอัตโนมัติจาก Raw Data) — แก้ไข Cost / Class / มิติ เพื่อใช้คำนวณมูลค่าและจัดกลุ่ม ABC. บันทึกอัตโนมัติในเครื่อง (localStorage)</div>
+      <div class="toolbar">
+        <input type="search" id="masterSearch" placeholder="ค้นหา stock code / brand / desc...">
+        <select id="masterBrand"><option value="">ทุก Brand</option></select>
+        <select id="masterClass"><option value="">ทุก Class</option><option>A</option><option>B</option><option>C</option></select>
+        <span class="spacer"></span>
+        <button class="btn ghost sm" id="recalcABC">คำนวณ ABC ใหม่</button>
+        <button class="btn ghost sm" id="exportMaster">Export Master</button>
+      </div>
+      <div class="tblwrap"><table id="masterTable"></table></div>
+    </div>
+  </section>
+
+  <!-- ============ PAGE 3: SUMMARY / RECONCILE ============ -->
+  <section class="page" id="page-summary">
+    <div class="grid kpis" id="sumKpis"></div>
+    <div class="grid" style="grid-template-columns:1fr 1fr;gap:14px" id="sumCharts">
+      <div class="card"><h2>ความถูกต้องสต็อก (Count Accuracy)</h2><div class="desc">จาก SKU ที่นับแล้ว</div><canvas id="chartAcc" height="150"></canvas></div>
+      <div class="card"><h2>สาเหตุผลต่าง (Variance Source)</h2><div class="desc">วินิจฉัยอัตโนมัติ</div><canvas id="chartSrc" height="150"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="toolbar">
+        <h2 style="margin:0">Reconcile Table</h2>
+        <span class="spacer"></span>
+        <input type="search" id="sumSearch" placeholder="ค้นหา code / รหัส / desc / brand...">
+        <select id="sumBrand"><option value="">ทุก Brand</option></select>
+        <select id="sumFilter">
+          <option value="all">ทั้งหมด</option>
+          <option value="counted">นับแล้ว</option>
+          <option value="variance">มีผลต่าง</option>
+          <option value="uncounted">ยังไม่นับ</option>
+        </select>
+        <select id="sumVar">
+          <option value="">ผลต่าง: ทั้งหมด</option>
+          <option value="has">มีผลต่าง (±)</option>
+          <option value="pos">เกิน (+)</option>
+          <option value="neg">ขาด (−)</option>
+          <option value="match">ตรงพอดี (0)</option>
+        </select>
+        <button class="btn ghost sm" id="exportRecon">Export</button>
+      </div>
+      <div class="tblwrap"><table id="reconTable"></table></div>
+    </div>
+  </section>
+
+  <!-- ============ PAGE 4: DAILY CYCLE COUNT ============ -->
+  <section class="page" id="page-count">
+    <div class="card">
+      <h2>4 · Daily Cycle Count <span class="pill info mini" id="todayBadge"></span></h2>
+      <div class="desc">ระบบแนะนำรายการที่ควรไปนับวันนี้ (จาก movement, มูลค่า, และความผิดปกติของ location) — กรอกยอดนับจริงลงช่อง Count</div>
+      <div class="toolbar">
+        <label class="fld" style="flex-direction:row;align-items:center;gap:6px">จำนวนที่แนะนำ/วัน
+          <input type="number" id="planQty" value="30" style="width:80px" min="1"></label>
+        <div class="seg" id="countStrategy">
+          <button data-s="smart" class="active">Smart (แนะนำ)</button>
+          <button data-s="value">มูลค่าสูง (A)</button>
+          <button data-s="movement">Movement สูง</button>
+          <button data-s="nomove">ไม่เคลื่อนไหว</button>
+          <button data-s="anomaly">ผิดปกติ</button>
+        </div>
+        <span class="spacer"></span>
+        <button class="btn ghost sm" id="regenPlan">สร้างแผนใหม่</button>
+      </div>
+      <div class="row" style="margin-bottom:10px">
+        <input type="search" id="countSearch" placeholder="สแกน/ค้นหา stock code...">
+        <div class="progressbar" style="flex:1"><div id="countProg" style="width:0%"></div></div>
+        <span class="mini muted" id="countProgTxt"></span>
+      </div>
+      <div id="countList"></div>
+    </div>
+  </section>
+
+  <!-- ============ PAGE 5: COMPARE & TRACKING ============ -->
+  <section class="page" id="page-compare">
+    <div class="grid kpis" id="cmpKpis"></div>
+    <div class="card">
+      <h2>5 · Compare &amp; Tracking — วินิจฉัยผลต่าง</h2>
+      <div class="desc">เฉพาะรายการที่นับแล้วและมีผลต่าง — ระบบวิเคราะห์ว่าดิฟมาจาก <b>ขาเข้า</b> / <b>ขาออก</b> / <b>ระบบ</b> และรายการที่อาจสลับกัน (swap)</div>
+      <div class="toolbar">
+        <input type="search" id="cmpSearch" placeholder="ค้นหา code / รหัส / desc / brand...">
+        <select id="cmpBrand"><option value="">ทุก Brand</option></select>
+        <select id="cmpSrc">
+          <option value="">ทุกสาเหตุ</option>
+          <option value="inbound">ขาเข้า</option>
+          <option value="outbound">ขาออก</option>
+          <option value="system">ระบบ</option>
+          <option value="swap">สลับรายการ</option>
+        </select>
+        <span class="spacer"></span>
+        <button class="btn ghost sm" id="exportCmp">Export</button>
+      </div>
+      <div class="tblwrap"><table id="cmpTable"></table></div>
+    </div>
+    <div class="card">
+      <h2>Possible Swap (สินค้าที่อาจนับสลับกัน)</h2>
+      <div class="desc">จับคู่รายการที่ variance ตรงข้ามกัน (+/−) ในกลุ่ม/brand เดียวกัน — อาจวางผิดตำแหน่งหรือสแกนสลับ</div>
+      <div class="tblwrap"><table id="swapTable"></table></div>
+    </div>
+  </section>
+
+  <!-- ============ PAGE 6: HISTORY & DASHBOARD ============ -->
+  <section class="page" id="page-history">
+    <div class="card">
+      <h2>6 · History &amp; Dashboard <span class="pill info mini" id="histDays"></span></h2>
+      <div class="desc">บันทึกข้อมูลรายวันสะสมต่อเนื่อง — Stock Onhand, รับเข้า, จ่ายออก, และยอดดิฟของแต่ละวัน · กด “💾 บันทึกวันนี้” ที่มุมขวาบนหลังนำเข้าไฟล์ของแต่ละวัน</div>
+      <div class="row">
+        <button class="btn sm" id="histSaveNow">💾 บันทึก Snapshot วันนี้</button>
+        <button class="btn ghost sm" id="histExport">Export ประวัติ (.xlsx)</button>
+        <button class="btn ghost sm" id="histImport">นำเข้าไฟล์ประวัติ</button>
+        <input type="file" id="histImportFile" accept=".json,.xlsx" hidden>
+        <span class="spacer"></span>
+        <button class="btn danger sm" id="histClear">ล้างประวัติทั้งหมด</button>
+      </div>
+    </div>
+
+    <div class="grid kpis" id="histKpis"></div>
+
+    <div class="grid" style="grid-template-columns:1fr 1fr;gap:14px">
+      <div class="card"><h2>แนวโน้ม Count Accuracy</h2><div class="desc">% ความตรงของสต็อกในแต่ละวัน</div><canvas id="chartTrendAcc" height="150"></canvas></div>
+      <div class="card"><h2>ยอดรับเข้า / จ่ายออก รายวัน</h2><div class="desc">Inbound vs Outbound qty</div><canvas id="chartTrendFlow" height="150"></canvas></div>
+      <div class="card"><h2>จำนวนรายการที่ดิฟ รายวัน</h2><div class="desc">SKU ที่มีผลต่าง</div><canvas id="chartTrendVarCnt" height="150"></canvas></div>
+      <div class="card"><h2>มูลค่าผลต่างรายวัน (฿)</h2><div class="desc">|Variance Value| รวมต่อวัน</div><canvas id="chartTrendVarVal" height="150"></canvas></div>
+    </div>
+
+    <div class="card">
+      <div class="toolbar">
+        <h2 style="margin:0">ไล่ประวัติรายตัว (Item Trace-back)</h2>
+        <span class="spacer"></span>
+        <input type="search" id="traceSearch" placeholder="พิมพ์ stock code / code / description...">
+      </div>
+      <div id="traceResult"><div class="empty">พิมพ์รหัสสินค้าเพื่อดูประวัติรายวัน (onhand / รับเข้า / จ่ายออก / ดิฟ)</div></div>
+    </div>
+
+    <div class="card">
+      <div class="toolbar">
+        <h2 style="margin:0">รายการที่ดิฟซ้ำหลายวัน (Repeat Offenders)</h2>
+        <span class="spacer"></span>
+        <span class="muted mini">รายการที่พบผลต่าง ≥ 2 วัน — ควรตรวจสอบเชิงลึก</span>
+      </div>
+      <div class="tblwrap"><table id="repeatTable"></table></div>
+    </div>
+
+    <div class="card">
+      <div class="toolbar">
+        <h2 style="margin:0">สรุปรายวัน (Daily Log)</h2>
+        <span class="spacer"></span>
+        <button class="btn ghost sm" id="dailyExport">Export</button>
+      </div>
+      <div class="tblwrap"><table id="dailyTable"></table></div>
+    </div>
+  </section>
+</main>
+
+<script src="app.js"></script>
+</div>
+</body>
+</html>
